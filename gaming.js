@@ -1,186 +1,204 @@
 var game_canva = document.getElementById('pong_canva');
-const level = document.getElementById('level');
-const leftArrow = document.getElementById("left_arrow");
-const rightArrow = document.getElementById("right_arrow");
+var context = game_canva.getContext('2d');
+var pauseButton = document.getElementById("pauseButton");
+var isFirstRound = true;
+var isPaused = false;
 
-localStorage.setItem("difficulty_level", "1");
+var X = game_canva.width / 2;
+var Y = game_canva.height - 50;
 
-let localDifficulty = localStorage.getItem("difficulty_level");
-let difficulty = parseInt(localDifficulty);
+var difficultyLevel = 1;
 
-/* canvas */
-if (game_canva.getContext){
-    var context = game_canva.getContext('2d');
-} else {
-    alert('canvas non supporté par ce navigateur');
-}
-
-var X = game_canva.width/2;
-var Y = game_canva.height-30;
-
-var timing = 8000;
-
-let bubblesArray = [];
-let speed;
-
-generateBubbles(difficulty);
-generateRectangle();
-setInterval(() => {
-    generateBubbles(difficulty + 1);
-    difficulty += 1;
-    localStorage.setItem("difficulty_level", difficulty);
-    level.innerHTML= "Difficulté niveau : " + difficulty;
-    console.log("Difficulty level : " + difficulty);
-}, timing);
-
-fallingAnim();
-gameOver();
-
-
-
-context.globalCompositeOperation = 'darker';  
-
-function generateRectangle() {
-    context.save();  
-    /* sauvegarde de l'état du contexte */
-    /* effaçage */
-    //context.clearRect(0, 0, game_canva.width,game_canva.height);
-    context.clearRect(0, Y, game_canva.width, 0);
-    /* translation du contexte et dessin du rectangle */
-    if(X > game_canva.width -25) {
-        X = game_canva.width -28;
-        context.translate(X, Y);
-    }
-    else if(X < 25) {
-        X = 28;
-        context.translate(X, Y);
-    }
-    else {
-        context.translate(X -25, Y);
-    }
-    context.fillStyle = "blue";
-    context.fillRect(0, 0, 50, 20);
-    context.restore();
-}
-
-function generateColor() {
-    let hexSet = "0123456789ABCDEF";
-    let finalHexString = "#";
-    for (let i = 0; i < 6; i++) {
-      finalHexString += hexSet[Math.ceil(Math.random() * 15)];
-    }
-    return finalHexString;
-  }
-
-function generateBubbles(amount) {
-    if (timing >= 3001) {
-        timing -= 250;
-    }
-    else if (timing <= 3000 && timing >= 501) {
-        timing -= 500;
-    }
-    else if(timing <= 500 && timing >= 351){
-        timing -= 100;
-    }
-    else {
-        timing = 250;
-    }
+function gameOver() {
+    var choice = confirm("Game Over! Your score: " + difficultyLevel + ". Do you want to play again?");
     
-    console.log("Next round in: " + timing + "ms");
-    for (let i = 0; i < amount; i++) {
-        bubblesArray[i] = new Bubble(
-            getRandomArbitrary(10, game_canva.width),
-            0, 
-            getRandomArbitrary(4, 30),
-            speed = Math.random()
-        );
+    if (choice) {
+        resetGame();
+    } else {
+        window.close();
     }
-};
+}
+
+function checkGameOver() {
+    for (var i = 0; i < bubblesArray.length; i++) {
+        var bubble = bubblesArray[i];
+
+        // Vérifier si le ballon a déjà atteint le bas de l'écran
+        if (bubble.y + bubble.radius > Y - 5 && bubble.x + bubble.radius > X - 15 && bubble.x - bubble.radius < X + 15 && bubble.y - bubble.radius < Y) {
+            gameOver();
+            return;
+        }
+    }
+}
+
+
+function updateDifficultyDisplay() {
+    document.getElementById('difficulty-display').innerText = difficultyLevel;
+}
+
+function increaseDifficulty() {
+    if (!isFirstRound) {
+        difficultyLevel++;
+    }
+    isFirstRound = false;
+}
+
+function resetDifficulty() {
+    difficultyLevel = 1;
+    isFirstRound = true;
+}
+
+function getRectangleSize() {
+    // Ajustez cette formule selon vos besoins
+    if(difficultyLevel < 50) {
+        return 90 - difficultyLevel * 1;
+    }
+    else {
+        return 30;
+    }
+}
+
+// Barre de jeu
+function drawRectangle() {
+    context.beginPath();
+    var rectangleSize = getRectangleSize();
+    context.rect(X - rectangleSize / 2, Y, rectangleSize, 25);
+    context.fillStyle = "blue";
+    context.fill();
+    context.closePath();
+}
+
+// Fonction de dessin des ballons
+function drawBubble(x, y, radius, color) {
+    context.beginPath();
+    context.arc(x, y, radius, 0, Math.PI * 2);
+    context.fillStyle = color;
+    context.imageSmoothingEnabled = true;
+    context.fill();
+    context.closePath();
+}
+
+// Mouvement de la barre vers la gauche
+function moveLeft() {
+    X -= 15;
+    if (X < 0) {
+        X = 15;
+    }
+}
+
+// Mouvement de la barre vers la droite
+function moveRight() {
+    X += 15;
+    if (X > game_canva.width) {
+        X = game_canva.width - 15;
+    }
+}
+
+// Gestionnaire d'événements pour les touches fléchées
+document.addEventListener("keydown", function(e) {
+    switch (e.keyCode) {
+        case 39:
+            moveRight();
+            break;
+        case 32:
+            isPaused = !isPaused;
+            togglePause(isPaused);
+            break;    
+        case 37:
+            moveLeft();
+            break;
+        default:
+    }
+});
+
+// Tableau pour stocker les ballons
+var bubblesArray = [];
+
+function generateBubbles() {
+    var minNumberOfBubbles = difficultyLevel / 2;
+    var numberOfBubbles = Math.ceil(getRandomArbitrary(minNumberOfBubbles, difficultyLevel));
+    console.log("Number of bubbles: " + numberOfBubbles);
+
+    for (var i = 0; i < numberOfBubbles; i++) {
+        var baseSpeed = 1;
+        var speedMultiplier = 1 + (difficultyLevel * 0.1);
+        var maxRadius = 15 + difficultyLevel / 2;
+        
+        var x = Math.random() * game_canva.width;
+        var y = 0;
+        var radius = getRandomArbitrary(2, maxRadius);
+        var speed = baseSpeed + (getRandomArbitrary(0.1, 0.5) * speedMultiplier);
+
+        var color = "#" + ((1 << 24) * Math.random() | 0).toString(16);
+        bubblesArray.push({ x: x, y: y, radius: radius, color: color, speed: speed });
+    }
+    increaseDifficulty();
+
+}
+
+// Fonction principale d'animation
+function animate() {
+        if (!isPaused) {
+        context.clearRect(0, 0, game_canva.width, game_canva.height);
+
+        drawRectangle();
+
+        bubblesArray.forEach(function(bubble) {
+            drawBubble(bubble.x, bubble.y, bubble.radius, bubble.color);
+            bubble.y += bubble.speed;
+        });
+
+        if (bubblesArray.every(bubble => bubble.y > game_canva.height)) {
+            bubblesArray = [];
+            generateBubbles();
+        }
+        if (Math.random() < 0.02 && bubblesArray.length === 0) {
+            generateBubbles();
+        }
+
+        checkGameOver();
+
+        updateDifficultyDisplay();
+        requestAnimationFrame(animate);
+    }
+}
+
+function resetGame() {
+    bubblesArray = [];
+    X = game_canva.width / 2;
+    Y = game_canva.height - 50;
+    
+    resetDifficulty();
+    updateDifficultyDisplay();
+}
+
+var left_arrow = document.getElementById("left_arrow");
+var right_arrow = document.getElementById("right_arrow");
+
+left_arrow.addEventListener("click", moveLeft);
+right_arrow.addEventListener("click", moveRight);
+
 
 function getRandomArbitrary(min, max) {
     return Math.random() * (max - min) + min;
 }
 
-function Bubble(x, y, rayon, speed) {
-    
-    this.x = x;
-    this.y = y;
-    this.rayon = rayon;
-    this.speed = speed;
-    this.color = generateColor();
-    this.draw = function() {
-       
-       context.beginPath();
-       context.arc(this.x, this.y, this.rayon, 0, Math.PI * 2);
-       context.fillStyle = this.color;
-       context.fill();
-
-      
+function togglePause(isPaused) {
+    if (isPaused) {
+        // Le jeu est en pause
+        pauseButton.innerHTML = "<i class='fa-solid fa-circle-play play' id='play'></i>";
+    } else {
+        pauseButton.innerHTML = "<i class='fa-solid fa-circle-pause pause' id='pause'></i>";
+        requestAnimationFrame(animate);
     }
-    this.fall = function() {
-        
-        this.y = this.y + (1 + speed);
-        this.draw();
-        generateRectangle();
-        //console.log(speed);
-    }
-    this.fall();
-
- }
-
- /* fonction de dessin */
- function fallingAnim() {
-    context.save();
-    context.clearRect(0, 0, game_canva.width,game_canva.height);
-    requestAnimationFrame(fallingAnim);
-  
-    bubblesArray.forEach((bubble) => bubble.fall());
-    context.restore();
-  }
-
-function Translation() {
-    context.save();
-    generateRectangle();
-    context.restore();
-}
-    
-
-// Keyup/down mouvements //
-document.addEventListener("keydown", down, false);
-document.addEventListener("keyup", up, false);
-
-function down(e){
-    // traitement de différents cas
-    switch(e.keyCode) {   
-    case 39:
-        // flèche droite
-        X = X +24;
-    break;
-    case 37:
-          // flèche gauche
-        X = X -24;
-          break;
-        default:
-    }
-    Translation();
-}
-function up(e){
-    X = X;
-    Y = Y;
-    //console.log("x = " + X);
 }
 
-leftArrow.onclick = function() {
-    X = X -24;
-};
 
-rightArrow.onclick = function() {
-    X = X +24;
-};
 
-function gameOver() {
-    for (let i = 0; i < bubblesArray.length; i++) {
-        console.log("Bubble " + i + "; x: " + bubblesArray[i]["x"] + ";");
-        console.log("Bubble " + i + "; y: " + bubblesArray[i]["y"] + ";");
-      }
-};
+pauseButton.addEventListener("click", function() {
+    isPaused = !isPaused;
+    togglePause(isPaused);
+});
+
+// Main game loop
+animate();

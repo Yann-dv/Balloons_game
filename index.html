@@ -17,16 +17,15 @@
     </nav>
     <header>
         <h1>Try to avoid balloons !!!</h1>
-        <div class="instructions">
-        <span class="key">&#8592;</span><span class="infos">Use the keyboard keys</span><span class="key">&#8594;</span>
-        </div>
     </header>
     <div class="main_container">
-        <canvas id="pong_canva"></canvas>
+        <canvas id="pong_canva" width="1000" height="450"></canvas>
     </div>
+    <p class="instructions">Use the arrows to move the paddle</p>
     <div class="arrow_container">
         <div class="arrows">
             <button><i class="fa-solid fa-circle-arrow-left arrow" id="left_arrow"></i></button>
+            <button id="pauseButton"><i class="fa-solid fa-circle-pause pause" id="pause"></i></button> <!-- -->
             <button><i class="fa-solid fa-circle-arrow-right arrow" id="right_arrow"></i></button>
         </div>
     </div>
