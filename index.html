@@ -13,14 +13,16 @@
 </head>
 <body>
     <nav>
-        <span id="level">Difficulté niveau : 1</span>
+        <span id="level">Difficulty level : <span id="difficulty-display">1</span></span>
     </nav>
     <header>
-        <h1>Evitez les ballons !!!</h1>
-        <p class="infos">Utilisez les touches clavier</p>
+        <h1>Try to avoid balloons !!!</h1>
+        <div class="instructions">
+        <span class="key">&#8592;</span><span class="infos">Use the keyboard keys</span><span class="key">&#8594;</span>
+        </div>
     </header>
     <div class="main_container">
-        <canvas id="pong_canva" width="1200" height="450"></canvas>
+        <canvas id="pong_canva"></canvas>
     </div>
     <div class="arrow_container">
         <div class="arrows">
