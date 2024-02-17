@@ -3,6 +3,7 @@ var context = game_canva.getContext('2d');
 var pauseButton = document.getElementById("pauseButton");
 var isFirstRound = true;
 var isPaused = false;
+var currentBubblesCount = 0;
 
 var X = game_canva.width / 2;
 var Y = game_canva.height - 50;
@@ -29,6 +30,10 @@ function checkGameOver() {
             return;
         }
     }
+}
+
+function updateBubblesCountDisplay() {
+    document.getElementById('ballons-display').innerText = "Balloons: " + currentBubblesCount;
 }
 
 
@@ -117,7 +122,6 @@ var bubblesArray = [];
 function generateBubbles() {
     var minNumberOfBubbles = difficultyLevel / 2;
     var numberOfBubbles = Math.ceil(getRandomArbitrary(minNumberOfBubbles, difficultyLevel));
-    console.log("Number of bubbles: " + numberOfBubbles);
 
     for (var i = 0; i < numberOfBubbles; i++) {
         var baseSpeed = 1;
@@ -131,27 +135,40 @@ function generateBubbles() {
 
         var color = "#" + ((1 << 24) * Math.random() | 0).toString(16);
         bubblesArray.push({ x: x, y: y, radius: radius, color: color, speed: speed });
+        currentBubblesCount++;
     }
     increaseDifficulty();
 
 }
 
 // Fonction principale d'animation
+var currentBubblesCount = 0;
+
 function animate() {
-        if (!isPaused) {
+    if (!isPaused) {
         context.clearRect(0, 0, game_canva.width, game_canva.height);
 
         drawRectangle();
 
-        bubblesArray.forEach(function(bubble) {
+        var ballsPassed = 0;
+
+        bubblesArray.forEach(function(bubble, index) {
             drawBubble(bubble.x, bubble.y, bubble.radius, bubble.color);
             bubble.y += bubble.speed;
+
+            if (bubble.y > game_canva.height && !bubble.passed) {
+                bubble.passed = true;
+                ballsPassed++;
+            }
+
+            // Supprimez les ballons passés du tableau
+            if (bubble.y > game_canva.height + bubble.radius) {
+                bubblesArray.splice(index, 1);
+            }
         });
 
-        if (bubblesArray.every(bubble => bubble.y > game_canva.height)) {
-            bubblesArray = [];
-            generateBubbles();
-        }
+        currentBubblesCount = Math.max(0, currentBubblesCount - ballsPassed);
+
         if (Math.random() < 0.02 && bubblesArray.length === 0) {
             generateBubbles();
         }
@@ -159,11 +176,13 @@ function animate() {
         checkGameOver();
 
         updateDifficultyDisplay();
+        updateBubblesCountDisplay();
         requestAnimationFrame(animate);
     }
 }
 
 function resetGame() {
+    currentBubblesCount = 0;
     bubblesArray = [];
     X = game_canva.width / 2;
     Y = game_canva.height - 50;
